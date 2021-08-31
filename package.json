@@ -8,7 +8,7 @@
   "scripts": {
     "start": "pm2 reload ecosystem.config.js --env production",
     "start-dev": "pm2 reload ecosystem.config.js --env dev",
-    "stop": "pm2 stop IngressMissionArtsBot",
+    "stop": "pm2 stop ecosystem.config.js",
     "dev": "node src/index.js",
     "test": "mocha"
   },
