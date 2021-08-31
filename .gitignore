@@ -281,3 +281,4 @@ package-lock.json
 data/
 config.js
 config.dev.js
+secret/

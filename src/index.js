@@ -5,14 +5,20 @@ var config_path = "../config.dev";
 if (process.env.NODE_ENV === "production") {
   config_path = "../config";
 }
-const token = require(config_path).token;
+const config = require(config_path);
+const token = config.token;
 
 if (!token) {
   console.error("No Token");
   process.exit(1);
 }
 
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token, { webHook: config.webhook });
+
+bot.setWebHook(
+  `https://${config.webhook.domain}:${config.webhook.port}/bot${token}`,
+  { certificate: config.webhook.cert }
+);
 
 bot.onText(/\/q (.+)/, (msg, match) => {
   handle({ msg, match, bot, id: msg.chat.id });
