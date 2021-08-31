@@ -61,7 +61,7 @@ class Handler {
       result.push("任务已找到，一共有这么多任务，你要看哪一个呢：");
       await this.sendText(result.join("\n"), { parse_mode: null });
     } else {
-      await this.handleSingle(fi);
+      await this.handleSingle(fi, title);
     }
   }
   async sendCoverPhoto(m) {
@@ -84,16 +84,18 @@ class Handler {
 
   handleLinks(name, shortUrl) {
     const links = [];
+    const bgUrl = encodeURI(`https://bannergress.com/search/${name}`)
     links.push(`[Trello](${shortUrl})`);
+    links.push(`[bannergress](${bgUrl})`);
     return links.join(" | ");
   }
 
-  async handleSingle(missions) {
+  async handleSingle(missions, title) {
     if (missions != undefined) {
       const result = [];
       const m = missions[0];
       const name = m.name.replace(this.reg, "");
-      const links = this.handleLinks(name, m.shortUrl);
+      const links = this.handleLinks(title, m.shortUrl);
 
       await this.sendText(`任务已找到 ${links}`, { parse_mode: "Markdown" });
       await this.sendCoverPhoto(m);
@@ -136,7 +138,7 @@ class Handler {
     if (missions.length > 1) {
       await this.handleMulti(missions, title);
     } else if (missions.length === 1) {
-      await this.handleSingle(missions);
+      await this.handleSingle(missions, title);
     } else {
       await this.handleNull();
     }
