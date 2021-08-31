@@ -151,7 +151,7 @@ module.exports = async function handle({ msg, match, bot, id }) {
   const handler = new Handler({ bot, id });
   try {
     await handler.handle({ msg, match });
-    console.error(match);
+    console.log(match);
     if (match[1].includes("广州"))
       await handler.sendText("广州任务 Channel：@IngressMissionCanton");
     if (match[1].includes("大连"))
