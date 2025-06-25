@@ -123,12 +123,12 @@ async def query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if bnr['id'] not in bnrs:
                 lines = [
                     f'[{escaped(bnr["title"])}](https://bannergress.com/banner/{bnr["id"]}) / {escaped(bnr["formattedAddress"])}',
-                    '',
-                    '任务路线：',
-                    '任务性质：',
-                    '典型完成时间：',
-                    '建议交通方式：',
-                    '注意方式：',
+                    # '',
+                    # '任务路线：',
+                    # '任务性质：',
+                    # '典型完成时间：',
+                    # '建议交通方式：',
+                    # '注意方式：',
                 ]
                 msg = await context.bot.send_message(
                     chat_id='@IngressMedalArts',

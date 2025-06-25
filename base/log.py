@@ -8,7 +8,7 @@ import colorlog
 
 from base.sentry import sentry_init
 
-# sentry_init()
+sentry_init()
 
 
 BASIC_FORMAT = '%(asctime)s - %(levelname)s - %(name)s - %(module)s - %(lineno)d - %(funcName)s - %(message)s'
