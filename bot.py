@@ -8,7 +8,7 @@ from http import HTTPStatus
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
 from flask import Flask, Response, abort, make_response, request
-from telegram import (BotCommandScopeAllPrivateChats, BotCommandScopeChat,
+from telegram import (BotCommandScopeAllGroupChats, BotCommandScopeChat,
                       Update)
 from telegram.ext import (Application, CallbackContext, CallbackQueryHandler,
                           CommandHandler, ContextTypes, ConversationHandler,
@@ -79,12 +79,15 @@ async def query_place(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             "offset": 0
         }, headers=HEADERS)
         assert len(resp)
-        lines = [place['formattedAddress'], '']
+        lines = [escaped(place['formattedAddress']), '']
         for bnr in resp[:30]:
-            lines.append('📌 ' + bnr['title'])
+            if bnr['id'] in bnrs:
+                lines.append(f"📌 [{escaped(bnr['title'])}](https://t.me/IngressMedalArts/{bnrs[bnr['id']]['msgID']})")
+            else:
+                lines.append(f"📌 `{escaped(bnr['title'])}`")
         if len(resp) > 30:
-            lines.append('...')
-        await update.effective_message.reply_text('\n'.join(lines))
+            lines.append(escaped('...'))
+        await update.effective_message.reply_text('\n'.join(lines), parse_mode='MarkdownV2', disable_web_page_preview=True)
 
     except Exception as e:
         await update.effective_message.reply_text('在查询过程中发生错误')
@@ -150,10 +153,13 @@ async def query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
             lines = []
             for bnr in resp[:30]:
-                lines.append('📌 ' + bnr['title'])
+                if bnr['id'] in bnrs:
+                    lines.append(f"📌 [{escaped(bnr['title'])}](https://t.me/IngressMedalArts/{bnrs[bnr['id']]['msgID']})")
+                else:
+                    lines.append(f"📌 `{escaped(bnr['title'])}`")
             if len(resp) > 30:
-                lines.append('...')
-            await update.effective_message.reply_text('\n'.join(lines))
+                lines.append(escaped('...'))
+            await update.effective_message.reply_text('\n'.join(lines), parse_mode='MarkdownV2', disable_web_page_preview=True)
 
     except Exception as e:
         await update.effective_message.reply_text('在查询过程中发生错误')
@@ -193,6 +199,12 @@ async def main() -> None:
     app.add_handler(CommandHandler('q', query, filters=filter))
 
     app.add_handler(MessageHandler(filters.IS_AUTOMATIC_FORWARD & main_group, self_unpin))
+    
+    commands = []
+    commands.append(('q', '查询任务', 1))
+    commands.append(('p', '根据城市查询任务（英文地名）', 2))
+    await app.bot.set_my_commands(commands, scope=BotCommandScopeChat(owner))
+    await app.bot.set_my_commands(commands, scope=BotCommandScopeChat(GROUP['main']))
 
     # Pass webhook settings to telegram
     await app.bot.set_webhook(**WEBHOOK)
