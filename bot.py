@@ -1,9 +1,9 @@
 import asyncio
-import random
-import time
+# import random
+# import time
 from http import HTTPStatus
 # from typing import cast
-from threading import Thread
+# from threading import Thread
 
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
@@ -14,7 +14,7 @@ from telegram.ext import (Application, CallbackContext, CallbackQueryHandler,
                           CommandHandler, ContextTypes, ConversationHandler,
                           ExtBot, InlineQueryHandler, JobQueue, MessageHandler,
                           MessageReactionHandler, TypeHandler, filters)
-from telegram.ext.filters import UpdateType
+# from telegram.ext.filters import UpdateType
 
 from base import network
 from base.config import GROUP, SERVER, WEBHOOK, accessToken, owner
@@ -160,6 +160,17 @@ async def query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         eprint(e)
 
 
+async def self_unpin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Unpin the message if it is pinned by the bot itself."""
+    assert update.effective_message
+    msg = update.effective_message
+    try:
+        if msg.entities and msg.entities[0].url and 'https://bannergress.com/banner/' in msg.entities[0].url:
+            await msg.unpin()
+    except Exception as e:
+        eprint(e)
+
+
 async def main() -> None:
     """Set up PTB application and a web application for handling the incoming requests."""
     # Here we set updater to None because we want our custom webhook server to handle the updates
@@ -180,6 +191,8 @@ async def main() -> None:
     app.add_handler(CommandHandler('test', test, filters=filter))
     app.add_handler(CommandHandler('p', query_place, filters=filter))
     app.add_handler(CommandHandler('q', query, filters=filter))
+
+    app.add_handler(MessageHandler(filters.IS_AUTOMATIC_FORWARD & main_group, self_unpin))
 
     # Pass webhook settings to telegram
     await app.bot.set_webhook(**WEBHOOK)
