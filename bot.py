@@ -84,7 +84,7 @@ async def query_place(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             if bnr['id'] in bnrs:
                 lines.append(f"📌 [{escaped(bnr['title'])}](https://t.me/IngressMedalArts/{bnrs[bnr['id']]['msgID']})")
             else:
-                lines.append(f"📌 `{escaped(bnr['title'])}`")
+                lines.append(f"📌 `/q {escaped(bnr['title'])}`")
         if len(resp) > 30:
             lines.append(escaped('...'))
         await update.effective_message.reply_text('\n'.join(lines), parse_mode='MarkdownV2', disable_web_page_preview=True)
@@ -156,7 +156,7 @@ async def query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 if bnr['id'] in bnrs:
                     lines.append(f"📌 [{escaped(bnr['title'])}](https://t.me/IngressMedalArts/{bnrs[bnr['id']]['msgID']})")
                 else:
-                    lines.append(f"📌 `{escaped(bnr['title'])}`")
+                    lines.append(f"📌 `/q {escaped(bnr['title'])}`")
             if len(resp) > 30:
                 lines.append(escaped('...'))
             await update.effective_message.reply_text('\n'.join(lines), parse_mode='MarkdownV2', disable_web_page_preview=True)
