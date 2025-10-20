@@ -2,19 +2,16 @@ import asyncio
 # import random
 # import time
 from http import HTTPStatus
-# from typing import cast
-# from threading import Thread
+from typing import cast
 
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
 from flask import Flask, Response, abort, make_response, request
-from telegram import (BotCommandScopeAllGroupChats, BotCommandScopeChat,
-                      Update)
+from telegram import BotCommandScopeAllGroupChats, BotCommandScopeChat, Update
 from telegram.ext import (Application, CallbackContext, CallbackQueryHandler,
                           CommandHandler, ContextTypes, ConversationHandler,
                           ExtBot, InlineQueryHandler, JobQueue, MessageHandler,
                           MessageReactionHandler, TypeHandler, filters)
-# from telegram.ext.filters import UpdateType
 
 from base import network
 from base.config import GROUP, SERVER, WEBHOOK, accessToken, owner
@@ -166,6 +163,58 @@ async def query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         eprint(e)
 
 
+# 给使用错误加个 Exception
+class UsageError(Exception):
+    pass
+
+
+async def generator(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    assert update.effective_message
+    try:
+        if context.args is None or len(context.args) > 1:
+            raise UsageError
+        url = ' '.join(context.args).replace('http://', 'https://')
+        if not url.startswith('https://bannergress.com/banner/'):
+            raise UsageError
+        bnr_id = url.split('https://bannergress.com/banner/')[1].split('/')[0]
+        if bnr_id not in bnrs:
+            bnr = cast(dict, await network.get_json(f'https://api.bannergress.com/bnrs/{bnr_id}', headers=HEADERS))
+            del bnr['missions']
+            lines = [
+                f'[{escaped(bnr["title"])}](https://bannergress.com/banner/{bnr["id"]}) / {escaped(bnr["formattedAddress"])}',
+                # '',
+                # '任务路线：',
+                # '任务性质：',
+                # '典型完成时间：',
+                # '建议交通方式：',
+                # '注意方式：',
+            ]
+            msg = await context.bot.send_message(
+                chat_id='@IngressMedalArts',
+                text='\n'.join(lines),
+                parse_mode='MarkdownV2',
+            )
+            msgID = msg.message_id
+            bnrs[bnr['id']] = bnr
+            bnrs[bnr['id']]['msgID'] = msgID
+            bnrs.dump()
+            # await update.effective_message.reply_text(
+            #     text=f'任务已创建: https://t.me/IngressMedalArts/{msgID}'
+            # )
+        else:
+            msgID = bnrs[bnr_id]['msgID']
+            await update.effective_message.reply_text(
+                text=f'任务已存在: https://t.me/IngressMedalArts/{msgID}'
+            )
+
+    except UsageError:
+        await update.effective_message.reply_text('使用方法：/g [bannergress 任务连接]')
+
+    except Exception as e:
+        await update.effective_message.reply_text('在查询过程中发生错误')
+        eprint(e)
+
+
 async def self_unpin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Unpin the message if it is pinned by the bot itself."""
     assert update.effective_message
@@ -197,12 +246,14 @@ async def main() -> None:
     app.add_handler(CommandHandler('test', test, filters=filter))
     app.add_handler(CommandHandler('p', query_place, filters=filter))
     app.add_handler(CommandHandler('q', query, filters=filter))
+    app.add_handler(CommandHandler('g', generator, filters=filter))
 
     app.add_handler(MessageHandler(filters.IS_AUTOMATIC_FORWARD & main_group, self_unpin))
-    
+
     commands = []
     commands.append(('q', '查询任务', 1))
     commands.append(('p', '根据城市查询任务（英文地名）', 2))
+    commands.append(('g', '根据任务链接直接生成帖子', 3))
     await app.bot.set_my_commands(commands, scope=BotCommandScopeChat(owner))
     await app.bot.set_my_commands(commands, scope=BotCommandScopeChat(GROUP['main']))
 
